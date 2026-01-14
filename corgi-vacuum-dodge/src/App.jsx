@@ -8,10 +8,13 @@ const START_POS = { x: 4, y: 8 };
 const GOAL_Y = 0;
 
 const LANES = [
-  { y: 6, speed: 0.03 },
-  { y: 5, speed: -0.04 },
-  { y: 4, speed: 0.05 },
+  { y: 1, speed: -0.05 },
+  { y: 2, speed: 0.04 },
   { y: 3, speed: -0.03 },
+  { y: 4, speed: 0.05 },
+  { y: 5, speed: -0.04 },
+  { y: 6, speed: 0.03 },
+  { y: 7, speed: -0.05 },
 ];
 
 const GOAL_ITEMS = ["🧸", "🦴"];
