@@ -7,6 +7,9 @@ const GRID_HEIGHT = 9;
 const START_POS = { x: 4, y: 8 };
 const GOAL_Y = 0;
 
+const MAX_LIVES = 3;
+
+// Lanes with obstacles (tile-based)
 const LANES = [
   { y: 1, speed: -0.05 },
   { y: 2, speed: 0.04 },
@@ -17,20 +20,22 @@ const LANES = [
   { y: 7, speed: -0.05 },
 ];
 
+// Only toys and bones
 const GOAL_ITEMS = ["🧸", "🦴"];
 
 export default function App() {
   const [player, setPlayer] = useState(START_POS);
   const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(MAX_LIVES);
 
   const [vacuums, setVacuums] = useState(
     LANES.map((lane) => ({
       ...lane,
-      x: Math.random() * GRID_WIDTH,
+      x: Math.floor(Math.random() * GRID_WIDTH),
     }))
   );
 
-  // Stable random goal items for top row
+  // Stable top row goals
   const goals = useMemo(
     () =>
       Array.from({ length: GRID_WIDTH }, () =>
@@ -39,16 +44,16 @@ export default function App() {
     []
   );
 
-  // Move vacuums
+  // Move vacuums tile by tile
   useEffect(() => {
     const interval = setInterval(() => {
       setVacuums((prev) =>
         prev.map((v) => ({
           ...v,
-          x: (v.x + v.speed + GRID_WIDTH) % GRID_WIDTH,
+          x: (v.x + (v.speed > 0 ? 1 : -1) + GRID_WIDTH) % GRID_WIDTH,
         }))
       );
-    }, 16);
+    }, 400); // speed in ms per tile
 
     return () => clearInterval(interval);
   }, []);
@@ -75,16 +80,27 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Collision detection
+  // Collision detection with lives
   useEffect(() => {
     const hit = vacuums.some(
       (v) => Math.round(v.x) === player.x && v.y === player.y
     );
 
     if (hit) {
+      setLives((prev) => prev - 1);
       setPlayer(START_POS);
     }
   }, [vacuums, player]);
+
+  // Reset game if lives reach zero
+  useEffect(() => {
+    if (lives <= 0) {
+      alert("Game over! Score reset.");
+      setScore(0);
+      setLives(MAX_LIVES);
+      setPlayer(START_POS);
+    }
+  }, [lives]);
 
   // Win condition: reach any tile in top row
   useEffect(() => {
@@ -97,7 +113,9 @@ export default function App() {
   return (
     <div className="container">
       <h1>🐶 Corgi Vacuum Dodge</h1>
-      <p>Score: {score}</p>
+      <p>
+        Score: {score} | Lives: {"❤️".repeat(lives)}
+      </p>
 
       <div className="grid">
         {Array.from({ length: GRID_HEIGHT }).map((_, y) =>
@@ -119,7 +137,7 @@ export default function App() {
         )}
       </div>
 
-      <p className="hint">Avoid the vacuums and reach any toy!</p>
+      <p className="hint">Avoid vacuums and reach any toy!</p>
     </div>
   );
 }
