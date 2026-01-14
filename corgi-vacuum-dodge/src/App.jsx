@@ -1,35 +1,113 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+const GRID_WIDTH = 9;
+const GRID_HEIGHT = 9;
+
+const START_POS = { x: 4, y: 8 };
+const GOAL_Y = 0;
+
+const LANES = [
+  { y: 6, speed: 0.03 },
+  { y: 5, speed: -0.04 },
+  { y: 4, speed: 0.05 },
+  { y: 3, speed: -0.03 },
+];
+
+export default function App() {
+  const [player, setPlayer] = useState(START_POS);
+  const [score, setScore] = useState(0);
+
+  const [vacuums, setVacuums] = useState(
+    LANES.map((lane) => ({
+      ...lane,
+      x: Math.random() * GRID_WIDTH,
+    }))
+  );
+
+  // Move vacuums
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVacuums((prev) =>
+        prev.map((v) => ({
+          ...v,
+          x: (v.x + v.speed + GRID_WIDTH) % GRID_WIDTH,
+        }))
+      );
+    }, 16);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      setPlayer((prev) => {
+        let { x, y } = prev;
+
+        if (e.key === "ArrowUp") y--;
+        if (e.key === "ArrowDown") y++;
+        if (e.key === "ArrowLeft") x--;
+        if (e.key === "ArrowRight") x++;
+
+        x = Math.max(0, Math.min(GRID_WIDTH - 1, x));
+        y = Math.max(0, Math.min(GRID_HEIGHT - 1, y));
+
+        return { x, y };
+      });
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Collision detection
+  useEffect(() => {
+    const hit = vacuums.some(
+      (v) =>
+        Math.round(v.x) === player.x &&
+        v.y === player.y
+    );
+
+    if (hit) {
+      setPlayer(START_POS);
+    }
+  }, [vacuums, player]);
+
+  // Win condition
+  useEffect(() => {
+    if (player.y === GOAL_Y) {
+      setScore((s) => s + 1);
+      setPlayer(START_POS);
+    }
+  }, [player]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="container">
+      <h1>🐶 Corgi Vacuum Dodge</h1>
+      <p>Score: {score}</p>
 
-export default App
+      <div className="grid">
+        {Array.from({ length: GRID_HEIGHT }).map((_, y) =>
+          Array.from({ length: GRID_WIDTH }).map((_, x) => {
+            const isPlayer = player.x === x && player.y === y;
+            const isGoal = y === GOAL_Y && x === Math.floor(GRID_WIDTH / 2);
+            const vacuumHere = vacuums.some(
+              (v) => Math.round(v.x) === x && v.y === y
+            );
+
+            return (
+              <div className="cell" key={`${x}-${y}`}>
+                {isPlayer && "🐶"}
+                {vacuumHere && "🧹"}
+                {isGoal && "🧸"}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <p className="hint">Use arrow keys to reach the toy!</p>
+    </div>
+  );
+}
