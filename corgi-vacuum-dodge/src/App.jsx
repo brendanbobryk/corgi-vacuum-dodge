@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import "./App.css";
 
 const GRID_WIDTH = 9;
@@ -14,6 +14,8 @@ const LANES = [
   { y: 3, speed: -0.03 },
 ];
 
+const GOAL_ITEMS = ["🧸", "🦴", "🪀"];
+
 export default function App() {
   const [player, setPlayer] = useState(START_POS);
   const [score, setScore] = useState(0);
@@ -23,6 +25,15 @@ export default function App() {
       ...lane,
       x: Math.random() * GRID_WIDTH,
     }))
+  );
+
+  // Stable random goal items for top row
+  const goals = useMemo(
+    () =>
+      Array.from({ length: GRID_WIDTH }, () =>
+        GOAL_ITEMS[Math.floor(Math.random() * GOAL_ITEMS.length)]
+      ),
+    []
   );
 
   // Move vacuums
@@ -64,9 +75,7 @@ export default function App() {
   // Collision detection
   useEffect(() => {
     const hit = vacuums.some(
-      (v) =>
-        Math.round(v.x) === player.x &&
-        v.y === player.y
+      (v) => Math.round(v.x) === player.x && v.y === player.y
     );
 
     if (hit) {
@@ -74,7 +83,7 @@ export default function App() {
     }
   }, [vacuums, player]);
 
-  // Win condition
+  // Win condition: reach any tile in top row
   useEffect(() => {
     if (player.y === GOAL_Y) {
       setScore((s) => s + 1);
@@ -91,23 +100,23 @@ export default function App() {
         {Array.from({ length: GRID_HEIGHT }).map((_, y) =>
           Array.from({ length: GRID_WIDTH }).map((_, x) => {
             const isPlayer = player.x === x && player.y === y;
-            const isGoal = y === GOAL_Y && x === Math.floor(GRID_WIDTH / 2);
             const vacuumHere = vacuums.some(
               (v) => Math.round(v.x) === x && v.y === y
             );
+            const isGoalRow = y === GOAL_Y;
 
             return (
               <div className="cell" key={`${x}-${y}`}>
                 {isPlayer && "🐶"}
                 {vacuumHere && "🧹"}
-                {isGoal && "🧸"}
+                {isGoalRow && goals[x]}
               </div>
             );
           })
         )}
       </div>
 
-      <p className="hint">Use arrow keys to reach the toy!</p>
+      <p className="hint">Avoid the vacuums and reach any toy!</p>
     </div>
   );
 }
