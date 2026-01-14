@@ -14,7 +14,7 @@ const LANES = [
   { y: 3, speed: -0.03 },
 ];
 
-const GOAL_ITEMS = ["🧸", "🦴", "🪀"];
+const GOAL_ITEMS = ["🧸", "🦴"];
 
 export default function App() {
   const [player, setPlayer] = useState(START_POS);
